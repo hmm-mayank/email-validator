@@ -13,24 +13,18 @@ import Update from "@material-ui/icons/Update";
 import ArrowUpward from "@material-ui/icons/ArrowUpward";
 import AccessTime from "@material-ui/icons/AccessTime";
 import Accessibility from "@material-ui/icons/Accessibility";
-import BugReport from "@material-ui/icons/BugReport";
-import Code from "@material-ui/icons/Code";
-import Cloud from "@material-ui/icons/Cloud";
 // core components
 import GridItem from "components/Grid/GridItem.js";
 import GridContainer from "components/Grid/GridContainer.js";
-import Table from "components/Table/Table.js";
-import Tasks from "components/Tasks/Tasks.js";
-import CustomTabs from "components/CustomTabs/CustomTabs.js";
+
 import Danger from "components/Typography/Danger.js";
 import Card from "components/Card/Card.js";
 import CardHeader from "components/Card/CardHeader.js";
 import CardIcon from "components/Card/CardIcon.js";
 import CardBody from "components/Card/CardBody.js";
 import CardFooter from "components/Card/CardFooter.js";
-
-import { bugs, website, server } from "variables/general.js";
-
+import { DropzoneArea } from "material-ui-dropzone";
+import Axios from "axios";
 import {
   dailySalesChart,
   emailsSubscriptionChart,
@@ -38,9 +32,43 @@ import {
 } from "variables/charts.js";
 
 import styles from "assets/jss/material-dashboard-react/views/dashboardStyle.js";
+import { Button } from "@material-ui/core";
 
 const useStyles = makeStyles(styles);
-
+let fileName = `${new Date().getTime()}`;
+const downloadFile = async () => {
+  await Axios({
+    method: "get",
+    url: `http://5.161.62.3:3000/api/download?name=${fileName}`,
+    responseType: "blob",
+  }).then((response) => {
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(`download`, `${fileName}.csv`);
+    document.body.appendChild(link);
+    link.click();
+  });
+};
+const uploadFile = async (file) => {
+  if (file) {
+    const formData = new FormData();
+    formData.append("files", file[0]);
+    formData.append("name", "test.csv");
+    formData.append("phoneNumber", "9936142128");
+    // const config = {
+    //   headers: {
+    //     "Content-Type": "multipart/form-data",
+    //   },
+    // };
+    let getMagic = await Axios({
+      method: "post",
+      url: "http://5.161.62.3:3000/upload_files",
+      data: formData,
+    });
+    console.log(getMagic);
+  }
+};
 export default function Dashboard() {
   const classes = useStyles();
   return (
@@ -52,7 +80,7 @@ export default function Dashboard() {
               <CardIcon color="warning">
                 <Icon>content_copy</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Used Space</p>
+              <p className={classes.cardCategory}>Validated Emails</p>
               <h3 className={classes.cardTitle}>
                 49/50 <small>GB</small>
               </h3>
@@ -63,7 +91,7 @@ export default function Dashboard() {
                   <Warning />
                 </Danger>
                 <a href="#pablo" onClick={(e) => e.preventDefault()}>
-                  Get more space
+                  Upload More
                 </a>
               </div>
             </CardFooter>
@@ -75,8 +103,8 @@ export default function Dashboard() {
               <CardIcon color="success">
                 <Store />
               </CardIcon>
-              <p className={classes.cardCategory}>Revenue</p>
-              <h3 className={classes.cardTitle}>$34,245</h3>
+              <p className={classes.cardCategory}>Invalid Mails</p>
+              <h3 className={classes.cardTitle}>34</h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
@@ -92,7 +120,7 @@ export default function Dashboard() {
               <CardIcon color="danger">
                 <Icon>info_outline</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Fixed Issues</p>
+              <p className={classes.cardCategory}>Qouta Consumed</p>
               <h3 className={classes.cardTitle}>75</h3>
             </CardHeader>
             <CardFooter stats>
@@ -109,8 +137,8 @@ export default function Dashboard() {
               <CardIcon color="info">
                 <Accessibility />
               </CardIcon>
-              <p className={classes.cardCategory}>Followers</p>
-              <h3 className={classes.cardTitle}>+245</h3>
+              <p className={classes.cardCategory}>Files Uploaded</p>
+              <h3 className={classes.cardTitle}>245</h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
@@ -197,45 +225,19 @@ export default function Dashboard() {
       </GridContainer>
       <GridContainer>
         <GridItem xs={12} sm={12} md={6}>
-          <CustomTabs
-            title="Tasks:"
-            headerColor="primary"
-            tabs={[
-              {
-                tabName: "Bugs",
-                tabIcon: BugReport,
-                tabContent: (
-                  <Tasks
-                    checkedIndexes={[0, 3]}
-                    tasksIndexes={[0, 1, 2, 3]}
-                    tasks={bugs}
-                  />
-                ),
-              },
-              {
-                tabName: "Website",
-                tabIcon: Code,
-                tabContent: (
-                  <Tasks
-                    checkedIndexes={[0]}
-                    tasksIndexes={[0, 1]}
-                    tasks={website}
-                  />
-                ),
-              },
-              {
-                tabName: "Server",
-                tabIcon: Cloud,
-                tabContent: (
-                  <Tasks
-                    checkedIndexes={[1]}
-                    tasksIndexes={[0, 1, 2]}
-                    tasks={server}
-                  />
-                ),
-              },
-            ]}
-          />
+          <Card>
+            <CardHeader color="warning">
+              <h4 className={classes.cardTitleWhite}>UPLOAD EXCEL FILES</h4>
+              <p className={classes.cardCategoryWhite}>
+                upload Excel files with email list
+              </p>
+            </CardHeader>
+            <DropzoneArea
+              onDrop={uploadFile}
+              maxFileSize={5000000}
+              dialogTitle="Upload Excel file only"
+            />
+          </Card>
         </GridItem>
         <GridItem xs={12} sm={12} md={6}>
           <Card>
@@ -246,16 +248,9 @@ export default function Dashboard() {
               </p>
             </CardHeader>
             <CardBody>
-              <Table
-                tableHeaderColor="warning"
-                tableHead={["ID", "Name", "Salary", "Country"]}
-                tableData={[
-                  ["1", "Dakota Rice", "$36,738", "Niger"],
-                  ["2", "Minerva Hooper", "$23,789", "Curaçao"],
-                  ["3", "Sage Rodriguez", "$56,142", "Netherlands"],
-                  ["4", "Philip Chaney", "$38,735", "Korea, South"],
-                ]}
-              />
+              <Button onClick={downloadFile}>
+                Download Valid Email csv File
+              </Button>
             </CardBody>
           </Card>
         </GridItem>
